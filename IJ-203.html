@@ -12,22 +12,84 @@ main{padding:12px;max-width:600px;margin:auto} .card{background:#fff;border-radi
 .btns input[value=ng]:checked+span{background:#d64545;color:#fff;border-color:#d64545}
 textarea,input[type=text]{width:100%;box-sizing:border-box;padding:8px;font-size:15px;margin-top:6px}
 button{width:100%;padding:14px;font-size:17px;background:#1f4e8c;color:#fff;border:0;border-radius:8px}
-#msg{text-align:center;color:#2e9e5b;font-weight:bold;margin-top:8px}
+button:disabled{opacity:.6}
+#msg{text-align:center;font-weight:bold;margin:8px 0;min-height:1.2em}
+.today{background:#eaf1fb;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:15px}
+h2{font-size:17px;margin:18px 4px 8px}
+.rec{background:#fff;border-radius:10px;margin-bottom:8px;box-shadow:0 1px 3px #0002}
+.rec summary{padding:12px;cursor:pointer;display:flex;justify-content:space-between;gap:8px}
+.rec .d{padding:0 12px 12px;font-size:14px;white-space:pre-line;line-height:1.6}
+.ok{color:#2e9e5b;font-weight:bold}.ng{color:#d64545;font-weight:bold}
+.muted{color:#777;font-size:14px;padding:4px}
 </style></head><body>
 <header><h1>사출기 3호기</h1><p>IJ-203 · 사출기 설비 점검</p></header><main>
 <div class="card info"><b>라인</b><span>B라인</span><b>점검 주기</b><span>매일</span><b>담당자</b><span>이서준</span><b>최근 점검일</b><span>2026-10-21</span></div>
+<div class="today">기록일: <b id="today"></b> <small>(저장하면 오늘 날짜로 기록됩니다)</small></div>
 <div class="card item"><h3>1. 금형 온도</h3><small>기준: 60~80 ℃</small><div class="btns"><label><input type="radio" name="i1" value="ok"><span>양호</span></label><label><input type="radio" name="i1" value="ng"><span>불량</span></label></div></div><div class="card item"><h3>2. 작동유 누유</h3><small>기준: 누유 없음</small><div class="btns"><label><input type="radio" name="i2" value="ok"><span>양호</span></label><label><input type="radio" name="i2" value="ng"><span>불량</span></label></div></div><div class="card item"><h3>3. 노즐 막힘</h3><small>기준: 이상 없음</small><div class="btns"><label><input type="radio" name="i3" value="ok"><span>양호</span></label><label><input type="radio" name="i3" value="ng"><span>불량</span></label></div></div><div class="card item"><h3>4. 필터 오염</h3><small>기준: 교체 주기 이내</small><div class="btns"><label><input type="radio" name="i4" value="ok"><span>양호</span></label><label><input type="radio" name="i4" value="ng"><span>불량</span></label></div></div><div class="card item"><h3>5. 배선·접지</h3><small>기준: 이상 없음</small><div class="btns"><label><input type="radio" name="i5" value="ok"><span>양호</span></label><label><input type="radio" name="i5" value="ng"><span>불량</span></label></div></div>
 <div class="card"><b>특이사항</b><textarea id="memo" rows="3"></textarea>
 <input type="text" id="who" placeholder="점검자 이름"></div>
-<button onclick="save()">점검 결과 저장</button><div id="msg"></div></main>
+<button id="btn" onclick="save()">점검 결과 저장</button><div id="msg"></div>
+<h2>과거 점검 내역</h2><div id="hist"><p class="muted">불러오는 중…</p></div>
+</main>
 <script>
-const K="chk-IJ-203";
-function load(){try{const d=JSON.parse(localStorage.getItem(K)||"{}");
-for(const[k,v]of Object.entries(d.r||{})){const e=document.querySelector(`input[name="${k}"][value="${v}"]`);if(e)e.checked=true}
-memo.value=d.m||"";who.value=d.w||"";if(d.t)msg.textContent="마지막 저장: "+d.t}catch(e){}}
-function save(){const r={};document.querySelectorAll("input[type=radio]:checked").forEach(e=>r[e.name]=e.value);
-const t=new Date().toLocaleString("ko-KR");
-try{localStorage.setItem(K,JSON.stringify({r,m:memo.value,w:who.value,t}))}catch(e){}
-msg.textContent="저장되었습니다 ("+t+")"}
-load();
+const CODE="IJ-203", NAME="사출기 3호기", API="", ITEMS=["금형 온도", "작동유 누유", "노즐 막힘", "필터 오염", "배선·접지"];
+const $=id=>document.getElementById(id);
+const todayStr=()=>new Date().toLocaleDateString("sv-SE",{timeZone:"Asia/Seoul"});   // yyyy-MM-dd, 항상 당일(한국시간)
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const LK="hist-"+CODE, DK="draft-"+CODE+"-"+todayStr();   // 임시저장은 날짜별 -> 다음 날은 빈 화면
+$("today").textContent=todayStr();
+
+// ---- 임시저장(입력 중 새로고침 대비)
+function draft(){const r={};document.querySelectorAll("input[type=radio]:checked").forEach(e=>r[e.name]=e.value);
+  try{localStorage.setItem(DK,JSON.stringify({r,m:$("memo").value,w:$("who").value}))}catch(e){}}
+function restore(){try{const d=JSON.parse(localStorage.getItem(DK)||"{}");
+  for(const[k,v]of Object.entries(d.r||{})){const e=document.querySelector(`input[name="${k}"][value="${v}"]`);if(e)e.checked=true}
+  $("memo").value=d.m||"";$("who").value=d.w||localStorage.getItem("who")||""}catch(e){}}
+document.addEventListener("input",draft);
+
+// ---- 저장소: 구글 시트(API 설정 시) / 이 기기(미설정 시)
+async function api(params){const u=new URL(API);for(const k in params)u.searchParams.set(k,params[k]);
+  const r=await fetch(u);const j=await r.json();if(!j.ok)throw new Error(j.error||"서버 오류");return j}
+function localList(){try{return JSON.parse(localStorage.getItem(LK)||"[]")}catch(e){return[]}}
+async function loadHistory(){
+  if(API)return (await api({action:"history",code:CODE})).rows;
+  return localList();
+}
+async function saveRecord(rec){
+  if(API){return (await api({action:"save",data:JSON.stringify(rec)})).row}
+  const d=todayStr(), t=new Date().toLocaleTimeString("ko-KR",{hour12:false,timeZone:"Asia/Seoul"});
+  const row={...rec,date:d,time:t};const l=localList().filter(x=>x.date!==d);l.unshift(row);
+  localStorage.setItem(LK,JSON.stringify(l));return row;
+}
+
+function render(rows){
+  if(!rows.length){$("hist").innerHTML='<p class="muted">저장된 점검 내역이 없습니다.</p>';return}
+  $("hist").innerHTML=rows.map(r=>{
+    const ng=(r.summary||"").includes("불량");
+    const det=String(r.detail||"").split("\n").map(l=>l.includes("불량")?`<span class="ng">${esc(l)}</span>`:esc(l)).join("\n");
+    return `<details class="rec"><summary><span><b>${esc(r.date)}</b> ${esc(r.time||"")} · ${esc(r.who||"")}</span>
+      <span class="${ng?"ng":"ok"}">${esc(r.summary||"")}</span></summary>
+      <div class="d">${det}${r.memo?"\n\n특이사항: "+esc(r.memo):""}</div></details>`}).join("");
+}
+async function refresh(){try{render(await loadHistory())}catch(e){$("hist").innerHTML='<p class="muted">내역을 불러오지 못했습니다: '+esc(e.message)+'</p>'}}
+
+async function save(){
+  const lines=[];let ng=0;
+  for(let i=0;i<ITEMS.length;i++){
+    const c=document.querySelector(`input[name="i${i+1}"]:checked`);
+    if(!c){$("msg").style.color="#d64545";$("msg").textContent=`${i+1}번 항목(${ITEMS[i]})을 선택하세요.`;return}
+    if(c.value==="ng")ng++;lines.push(`${i+1}. ${ITEMS[i]}: ${c.value==="ok"?"양호":"불량"}`);
+  }
+  const who=$("who").value.trim();
+  if(!who){$("msg").style.color="#d64545";$("msg").textContent="점검자 이름을 입력하세요.";return}
+  $("btn").disabled=true;$("msg").style.color="#555";$("msg").textContent="저장 중…";
+  try{
+    const row=await saveRecord({code:CODE,name:NAME,who,summary:ng?`불량 ${ng}건`:"모두 양호",detail:lines.join("\n"),memo:$("memo").value.trim()});
+    try{localStorage.setItem("who",who);localStorage.removeItem(DK)}catch(e){}
+    $("msg").style.color="#2e9e5b";$("msg").textContent=`저장되었습니다 (기록일 ${row.date})`;
+    await refresh();
+  }catch(e){$("msg").style.color="#d64545";$("msg").textContent="저장 실패: "+e.message}
+  $("btn").disabled=false;
+}
+restore();refresh();
 </script></body></html>
