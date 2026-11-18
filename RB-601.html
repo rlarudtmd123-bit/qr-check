@@ -1,0 +1,33 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>RB-601 점검</title>
+<style>
+body{font-family:'Malgun Gothic',sans-serif;margin:0;background:#f2f4f7;color:#222}
+header{background:#1f4e8c;color:#fff;padding:16px} h1{margin:0;font-size:20px} header p{margin:4px 0 0;opacity:.85;font-size:13px}
+main{padding:12px;max-width:600px;margin:auto} .card{background:#fff;border-radius:10px;padding:12px;margin-bottom:10px;box-shadow:0 1px 3px #0002}
+.info{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px} .info b{color:#555}
+.item h3{margin:0 0 2px;font-size:16px} .item small{color:#666}
+.btns{display:flex;gap:8px;margin-top:8px} .btns label{flex:1} .btns input{display:none}
+.btns span{display:block;text-align:center;padding:10px;border:2px solid #ccd;border-radius:8px;font-weight:bold}
+.btns input[value=ok]:checked+span{background:#2e9e5b;color:#fff;border-color:#2e9e5b}
+.btns input[value=ng]:checked+span{background:#d64545;color:#fff;border-color:#d64545}
+textarea,input[type=text]{width:100%;box-sizing:border-box;padding:8px;font-size:15px;margin-top:6px}
+button{width:100%;padding:14px;font-size:17px;background:#1f4e8c;color:#fff;border:0;border-radius:8px}
+#msg{text-align:center;color:#2e9e5b;font-weight:bold;margin-top:8px}
+</style></head><body>
+<header><h1>이송 로봇 1</h1><p>RB-601 · 공용 설비 점검</p></header><main>
+<div class="card info"><b>라인</b><span>C라인</span><b>점검 주기</b><span>주 1회</span><b>담당자</b><span>정하은</span><b>최근 점검일</b><span>2026-10-15</span></div>
+<div class="card item"><h3>1. 필터 오염</h3><small>기준: 교체 주기 이내</small><div class="btns"><label><input type="radio" name="i1" value="ok"><span>양호</span></label><label><input type="radio" name="i1" value="ng"><span>불량</span></label></div></div><div class="card item"><h3>2. 배선·접지</h3><small>기준: 이상 없음</small><div class="btns"><label><input type="radio" name="i2" value="ok"><span>양호</span></label><label><input type="radio" name="i2" value="ng"><span>불량</span></label></div></div>
+<div class="card"><b>특이사항</b><textarea id="memo" rows="3"></textarea>
+<input type="text" id="who" placeholder="점검자 이름"></div>
+<button onclick="save()">점검 결과 저장</button><div id="msg"></div></main>
+<script>
+const K="chk-RB-601";
+function load(){try{const d=JSON.parse(localStorage.getItem(K)||"{}");
+for(const[k,v]of Object.entries(d.r||{})){const e=document.querySelector(`input[name="${k}"][value="${v}"]`);if(e)e.checked=true}
+memo.value=d.m||"";who.value=d.w||"";if(d.t)msg.textContent="마지막 저장: "+d.t}catch(e){}}
+function save(){const r={};document.querySelectorAll("input[type=radio]:checked").forEach(e=>r[e.name]=e.value);
+const t=new Date().toLocaleString("ko-KR");
+try{localStorage.setItem(K,JSON.stringify({r,m:memo.value,w:who.value,t}))}catch(e){}
+msg.textContent="저장되었습니다 ("+t+")"}
+load();
+</script></body></html>
