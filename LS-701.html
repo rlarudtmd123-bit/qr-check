@@ -32,7 +32,7 @@ h2{font-size:17px;margin:18px 4px 8px}
 <h2>과거 점검 내역</h2><div id="hist"><p class="muted">불러오는 중…</p></div>
 </main>
 <script>
-const CODE="LS-701", NAME="레이저 마킹기", API="", ITEMS=["필터 오염", "배선·접지"];
+const CODE="LS-701", NAME="레이저 마킹기", API="https://script.google.com/macros/s/AKfycbxizlMb3SCXFnLb536DgpMT8iMTIVVO6s2cHVXJ_uwSmaOWXIOj6TbVcRfqEhZUXNszNg/exec", ITEMS=["필터 오염", "배선·접지"];
 const $=id=>document.getElementById(id);
 const todayStr=()=>new Date().toLocaleDateString("sv-SE",{timeZone:"Asia/Seoul"});   // yyyy-MM-dd, 항상 당일(한국시간)
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
